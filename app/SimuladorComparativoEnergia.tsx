@@ -106,6 +106,8 @@ const canvas = await html2canvas(input);
       pdf.setFontSize(16);
       pdf.text('Relatório Comparativo de Energia', 60, 20);
 
+if (!resultado) return;
+
       const economiaText = resultado.economia > 0
         ? `Você economizaria aproximadamente R$ ${resultado.economia.toFixed(2)} por mês ao optar pelo mercado livre. Isso se deve ao maior aproveitamento da geração solar no ambiente livre, que permite compensar 100% da energia gerada, conforme previsto na REN 1.059/2023 da ANEEL.`
         : `O mercado cativo está atualmente mais vantajoso neste cenário. Isso pode ocorrer em situações onde o custo da energia no mercado livre esteja elevado ou quando a compensação da geração distribuída seja mais limitada.`;
