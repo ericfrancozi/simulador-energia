@@ -167,6 +167,8 @@ if (!resultado) return;
         <input type="checkbox" id="usarSolar" checked={usarSolar} onChange={e => setUsarSolar(e.target.checked)} />
         <label htmlFor="usarSolar">Incluir geração solar na comparação?</label>
       </div>
+);
+}
 
       {usarSolar && (
         <>
