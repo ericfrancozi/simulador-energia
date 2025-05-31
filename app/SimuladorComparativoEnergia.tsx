@@ -1,8 +1,10 @@
-'use client'
+'use client';
+
 import { useState, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+
 type ResultadoSimulador = {
   custoCativo: number;
   custoLivre: number;
@@ -24,9 +26,6 @@ type ResultadoSimulador = {
     compensacoes: { cc: number; cl: number };
   };
 };
-
-const [resultado, setResultado] = useState<ResultadoSimulador | null>(null);
-
 
 export default function SimuladorComparativoEnergia() {
   const [consumoPonta, setConsumoPonta] = useState('');
@@ -55,18 +54,16 @@ export default function SimuladorComparativoEnergia() {
     const cl = parseFloat(compensacaoLivre) / 100;
 
     const consumoTotal = cp + cf;
-
     const valorBrutoCativo = cp * tp + cf * tf;
     const descontoSolarCativo = Math.min(gs, consumoTotal) * ((tp + tf) / 2) * cc;
     const custoCativo = (valorBrutoCativo - descontoSolarCativo) * (1 + i);
 
     const descontoSolarLivre = Math.min(gs, consumoTotal) * tl * cl;
-    const custoLivre = (consumoTotal * tl) - descontoSolarLivre;
+    const custoLivre = consumoTotal * tl - descontoSolarLivre;
 
     const custoCativoSemSolar = valorBrutoCativo * (1 + i);
     const custoLivreSemSolar = consumoTotal * tl;
     const economiaSemSolar = custoCativoSemSolar - custoLivreSemSolar;
-
     const economia = custoCativo - custoLivre;
 
     setResultado({
@@ -75,45 +72,40 @@ export default function SimuladorComparativoEnergia() {
       economia,
       custoCativoSemSolar,
       custoLivreSemSolar,
-      economiaSemSolar, 
-  memoria: {
-    consumoTotal,
-    valorBrutoCativo,
-    descontoSolarCativo,
-    descontoSolarLivre,
-    tarifaMediaCativo: (tp + tf) / 2,
-    consumoPonta: cp,
-    consumoForaPonta: cf,
-    tarifas: { tp, tf, tl },
-    icmsPercentual: i,
-    geracaoSolar: gs,
-    compensacoes: { cc, cl }
-  }
-});
+      economiaSemSolar,
+      memoria: {
+        consumoTotal,
+        valorBrutoCativo,
+        descontoSolarCativo,
+        descontoSolarLivre,
+        tarifaMediaCativo: (tp + tf) / 2,
+        consumoPonta: cp,
+        consumoForaPonta: cf,
+        tarifas: { tp, tf, tl },
+        icmsPercentual: i,
+        geracaoSolar: gs,
+        compensacoes: { cc, cl },
+      },
+    });
   };
 
   const exportarPDF = async () => {
-  const input = resultadoRef.current;
-  if (!input) return;
-  const canvas = await html2canvas(input);
+    const input = resultadoRef.current;
+    if (!input || !resultado) return;
+    const canvas = await html2canvas(input);
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF();
+    const logo = new Image();
+    logo.src = 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Logo_TV_2015.png';
 
-  const imgData = canvas.toDataURL('image/png');
-  const pdf = new jsPDF();
-
-  const logo = new Image();
-  logo.src = 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Logo_TV_2015.png'; // exemplo de logotipo externo
-
-  logo.onload = () => {
-  pdf.addImage(logo, 'PNG', 10, 10, 40, 15);
-
+    logo.onload = () => {
+      pdf.addImage(logo, 'PNG', 10, 10, 40, 15);
       pdf.setFontSize(16);
       pdf.text('Relatório Comparativo de Energia', 60, 20);
 
-if (!resultado) return;
-
       const economiaText = resultado.economia > 0
-        ? `Você economizaria aproximadamente R$ ${resultado.economia.toFixed(2)} por mês ao optar pelo mercado livre. Isso se deve ao maior aproveitamento da geração solar no ambiente livre, que permite compensar 100% da energia gerada, conforme previsto na REN 1.059/2023 da ANEEL.`
-        : `O mercado cativo está atualmente mais vantajoso neste cenário. Isso pode ocorrer em situações onde o custo da energia no mercado livre esteja elevado ou quando a compensação da geração distribuída seja mais limitada.`;
+        ? `Você economizaria aproximadamente R$ ${resultado.economia.toFixed(2)} por mês...`
+        : `O mercado cativo está atualmente mais vantajoso neste cenário...`;
 
       pdf.setFontSize(12);
       pdf.text(economiaText, 10, 35);
@@ -121,10 +113,8 @@ if (!resultado) return;
       const imgProps = pdf.getImageProperties(imgData);
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
       pdf.addImage(imgData, 'PNG', 0, 40, pdfWidth, pdfHeight);
 
-      // Nova tabela comparativa
       const yStart = 45 + pdfHeight;
       pdf.setFontSize(14);
       pdf.text('Resumo Comparativo – Com e Sem SFV', 10, yStart + 10);
@@ -145,9 +135,11 @@ if (!resultado) return;
       pdf.text('Percentual de economia:', 10, yStart + 41);
       pdf.text(`${((resultado.economia / resultado.custoCativoSemSolar) * 100).toFixed(1)}% (com SFV)`, 90, yStart + 41);
       pdf.text(`${((resultado.economiaSemSolar / resultado.custoCativoSemSolar) * 100).toFixed(1)}% (sem SFV)`, 140, yStart + 41);
+
       pdf.save('comparativo-energia.pdf');
     };
   };
+
   return (
     <div className="p-6 max-w-xl mx-auto bg-white rounded-xl shadow-md space-y-4">
       <h1 className="text-2xl font-bold text-center">Comparativo: Cativo vs Livre</h1>
@@ -167,8 +159,6 @@ if (!resultado) return;
         <input type="checkbox" id="usarSolar" checked={usarSolar} onChange={e => setUsarSolar(e.target.checked)} />
         <label htmlFor="usarSolar">Incluir geração solar na comparação?</label>
       </div>
-);
-}
 
       {usarSolar && (
         <>
@@ -189,64 +179,11 @@ if (!resultado) return;
           <p><strong>Economia estimada (com solar):</strong> R$ {resultado.economia.toFixed(2)}</p>
           <p><strong>Economia estimada (sem solar):</strong> R$ {resultado.economiaSemSolar.toFixed(2)}</p>
 
-          <div className="mt-2 p-2 border rounded bg-gray-50">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="font-semibold">
-                  <th className="text-left">&nbsp;</th>
-                  <th className="text-right">Com SFV</th>
-                  <th className="text-right">Sem SFV</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Custo no mercado Cativo</td>
-                  <td className="text-right">R$ {resultado.custoCativo.toFixed(2)}</td>
-                  <td className="text-right">R$ {resultado.custoCativoSemSolar.toFixed(2)}</td>
-                </tr>
-                <tr>
-                  <td>Custo no mercado Livre</td>
-                  <td className="text-right">R$ {resultado.custoLivre.toFixed(2)}</td>
-                  <td className="text-right">R$ {resultado.custoLivreSemSolar.toFixed(2)}</td>
-                </tr>
-                <tr className="font-medium">
-                  <td>Economia estimada</td>
-                  <td className="text-right">R$ {resultado.economia.toFixed(2)}</td>
-                  <td className="text-right">R$ {resultado.economiaSemSolar.toFixed(2)}</td>
-                </tr>
-                <tr>
-                  <td>Percentual</td>
-                  <td className="text-right">{((resultado.economia / resultado.custoCativoSemSolar) * 100).toFixed(1)}%</td>
-                  <td className="text-right">{((resultado.economiaSemSolar / resultado.custoCativoSemSolar) * 100).toFixed(1)}%</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <details className="bg-gray-50 p-3 border rounded">
-            <summary className="cursor-pointer font-semibold">Memória de cálculo</summary>
-            <ul className="mt-2 text-sm text-gray-700">
-              <li><strong>Consumo total:</strong> {resultado.memoria.consumoTotal} kWh</li>
-              <li><strong>Tarifa Cativo Ponta:</strong> R$ {resultado.memoria.tarifas.tp.toFixed(2)}</li>
-              <li><strong>Tarifa Cativo Fora-Ponta:</strong> R$ {resultado.memoria.tarifas.tf.toFixed(2)}</li>
-              <li><strong>Tarifa Livre:</strong> R$ {resultado.memoria.tarifas.tl.toFixed(2)}</li>
-              <li><strong>Tarifa média Cativo:</strong> R$ {resultado.memoria.tarifaMediaCativo.toFixed(2)}</li>
-              <li><strong>Valor bruto Cativo:</strong> R$ {resultado.memoria.valorBrutoCativo.toFixed(2)}</li>
-              <li><strong>Desconto Solar Cativo:</strong> R$ {resultado.memoria.descontoSolarCativo.toFixed(2)}</li>
-              <li><strong>Desconto Solar Livre:</strong> R$ {resultado.memoria.descontoSolarLivre.toFixed(2)}</li>
-              <li><strong>ICMS:</strong> {Math.round(resultado.memoria.icmsPercentual * 100)}%</li>
-              <li><strong>Geração solar:</strong> {resultado.memoria.geracaoSolar} kWh</li>
-              <li><strong>Compensação Cativo:</strong> {Math.round(resultado.memoria.compensacoes.cc * 100)}%</li>
-              <li><strong>Compensação Livre:</strong> {Math.round(resultado.memoria.compensacoes.cl * 100)}%</li>
-            </ul>
-          </details>
-
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={[{ name: 'Cativo', valor: resultado.custoCativo }, { name: 'Livre', valor: resultado.custoLivre }]}>
               <XAxis dataKey="name" />
               <YAxis />
-
-              <<Tooltip formatter={(value) => `R$ ${(Number(value)).toFixed(2)}`} />>
+              <Tooltip formatter={(value: number) => `R$ ${value.toFixed(2)}`} />
               <Bar dataKey="valor" fill="#2563eb" />
             </BarChart>
           </ResponsiveContainer>
