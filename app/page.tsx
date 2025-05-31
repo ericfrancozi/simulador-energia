@@ -1,8 +1,6 @@
-'use client';
-
 import SimuladorComparativoEnergia from './SimuladorComparativoEnergia';
 
-export default function Home() {
+export default function Page() {
   return <SimuladorComparativoEnergia />;
 }
 
