@@ -91,7 +91,9 @@ export default function SimuladorComparativoEnergia() {
 
   const exportarPDF = async () => {
     const input = resultadoRef.current;
-    const canvas = await html2canvas(input);
+if (!input) return;
+const canvas = await html2canvas(input);
+
     const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF();
 
