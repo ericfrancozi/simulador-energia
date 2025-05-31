@@ -3,6 +3,27 @@ import { useState, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+type ResultadoSimulador = {
+  custoCativo: number;
+  custoLivre: number;
+  economia: number;
+  custoCativoSemSolar: number;
+  custoLivreSemSolar: number;
+  economiaSemSolar: number;
+  memoria: {
+    consumoTotal: number;
+    valorBrutoCativo: number;
+    descontoSolarCativo: number;
+    descontoSolarLivre: number;
+    tarifaMediaCativo: number;
+    consumoPonta: number;
+    consumoForaPonta: number;
+    tarifas: { tp: number; tf: number; tl: number };
+    icmsPercentual: number;
+    geracaoSolar: number;
+    compensacoes: { cc: number; cl: number };
+  };
+};
 
 export default function SimuladorComparativoEnergia() {
   const [consumoPonta, setConsumoPonta] = useState('');
@@ -16,7 +37,7 @@ export default function SimuladorComparativoEnergia() {
   const [geracaoSolar, setGeracaoSolar] = useState('');
   const [compensacaoCativo, setCompensacaoCativo] = useState('100');
   const [compensacaoLivre, setCompensacaoLivre] = useState('100');
-  const [resultado, setResultado] = useState(null);
+  const [resultado, setResultado] = useState<ResultadoSimulador | null>(null);
   const resultadoRef = useRef<HTMLDivElement>(null);
 
   const simular = () => {
