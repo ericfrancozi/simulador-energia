@@ -148,7 +148,6 @@ if (!resultado) return;
       pdf.save('comparativo-energia.pdf');
     };
   };
-
   return (
     <div className="p-6 max-w-xl mx-auto bg-white rounded-xl shadow-md space-y-4">
       <h1 className="text-2xl font-bold text-center">Comparativo: Cativo vs Livre</h1>
