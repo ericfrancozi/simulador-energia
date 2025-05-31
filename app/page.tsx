@@ -1,15 +1,8 @@
 'use client';
 
-import SimuladorComparativoEnergia from '../SimuladorComparativoEnergia';
+import SimuladorComparativoEnergia from './SimuladorComparativoEnergia';
 
-export default function Page() {
+export default function Home() {
   return <SimuladorComparativoEnergia />;
 }
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
-}
+
