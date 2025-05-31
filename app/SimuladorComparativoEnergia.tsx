@@ -17,7 +17,7 @@ export default function SimuladorComparativoEnergia() {
   const [compensacaoCativo, setCompensacaoCativo] = useState('100');
   const [compensacaoLivre, setCompensacaoLivre] = useState('100');
   const [resultado, setResultado] = useState(null);
-  const resultadoRef = useRef();
+  const resultadoRef = useRef<HTMLDivElement>(null);
 
   const simular = () => {
     const cp = parseFloat(consumoPonta);
