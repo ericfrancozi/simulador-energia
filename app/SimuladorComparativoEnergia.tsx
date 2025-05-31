@@ -57,10 +57,8 @@ export default function SimuladorComparativoEnergia() {
     const valorBrutoCativo = cp * tp + cf * tf;
     const descontoSolarCativo = Math.min(gs, consumoTotal) * ((tp + tf) / 2) * cc;
     const custoCativo = (valorBrutoCativo - descontoSolarCativo) * (1 + i);
-
     const descontoSolarLivre = Math.min(gs, consumoTotal) * tl * cl;
-    const custoLivre = consumoTotal * tl - descontoSolarLivre;
-
+    const custoLivre = (consumoTotal * tl) - descontoSolarLivre;
     const custoCativoSemSolar = valorBrutoCativo * (1 + i);
     const custoLivreSemSolar = consumoTotal * tl;
     const economiaSemSolar = custoCativoSemSolar - custoLivreSemSolar;
@@ -84,17 +82,18 @@ export default function SimuladorComparativoEnergia() {
         tarifas: { tp, tf, tl },
         icmsPercentual: i,
         geracaoSolar: gs,
-        compensacoes: { cc, cl },
-      },
+        compensacoes: { cc, cl }
+      }
     });
   };
 
   const exportarPDF = async () => {
     const input = resultadoRef.current;
     if (!input || !resultado) return;
+
     const canvas = await html2canvas(input);
     const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF();
+    const pdf = new jsPDF('p', 'mm', 'a4');
     const logo = new Image();
     logo.src = 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Logo_TV_2015.png';
 
@@ -104,38 +103,19 @@ export default function SimuladorComparativoEnergia() {
       pdf.text('Relatório Comparativo de Energia', 60, 20);
 
       const economiaText = resultado.economia > 0
-        ? `Você economizaria aproximadamente R$ ${resultado.economia.toFixed(2)} por mês...`
-        : `O mercado cativo está atualmente mais vantajoso neste cenário...`;
+        ? `Você economizaria aproximadamente R$ ${resultado.economia.toFixed(2)} por mês ao optar pelo mercado livre.`
+        : `O mercado cativo está atualmente mais vantajoso neste cenário.`;
 
       pdf.setFontSize(12);
       pdf.text(economiaText, 10, 35);
 
       const imgProps = pdf.getImageProperties(imgData);
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-      pdf.addImage(imgData, 'PNG', 0, 40, pdfWidth, pdfHeight);
+      const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      const maxHeight = pdf.internal.pageSize.getHeight() - 50;
+      const scaledHeight = Math.min(imgHeight, maxHeight);
 
-      const yStart = 45 + pdfHeight;
-      pdf.setFontSize(14);
-      pdf.text('Resumo Comparativo – Com e Sem SFV', 10, yStart + 10);
-
-      pdf.setFontSize(10);
-      pdf.text('Custo no mercado Cativo:', 10, yStart + 20);
-      pdf.text(`R$ ${resultado.custoCativo.toFixed(2)} (com SFV)`, 90, yStart + 20);
-      pdf.text(`R$ ${resultado.custoCativoSemSolar.toFixed(2)} (sem SFV)`, 140, yStart + 20);
-
-      pdf.text('Custo no mercado Livre:', 10, yStart + 27);
-      pdf.text(`R$ ${resultado.custoLivre.toFixed(2)} (com SFV)`, 90, yStart + 27);
-      pdf.text(`R$ ${resultado.custoLivreSemSolar.toFixed(2)} (sem SFV)`, 140, yStart + 27);
-
-      pdf.text('Economia estimada:', 10, yStart + 34);
-      pdf.text(`R$ ${resultado.economia.toFixed(2)} (com SFV)`, 90, yStart + 34);
-      pdf.text(`R$ ${resultado.economiaSemSolar.toFixed(2)} (sem SFV)`, 140, yStart + 34);
-
-      pdf.text('Percentual de economia:', 10, yStart + 41);
-      pdf.text(`${((resultado.economia / resultado.custoCativoSemSolar) * 100).toFixed(1)}% (com SFV)`, 90, yStart + 41);
-      pdf.text(`${((resultado.economiaSemSolar / resultado.custoCativoSemSolar) * 100).toFixed(1)}% (sem SFV)`, 140, yStart + 41);
-
+      pdf.addImage(imgData, 'PNG', 0, 45, pdfWidth, scaledHeight);
       pdf.save('comparativo-energia.pdf');
     };
   };
@@ -146,13 +126,10 @@ export default function SimuladorComparativoEnergia() {
 
       <input type="number" placeholder="Consumo Ponta (kWh)" className="w-full p-3 border rounded" value={consumoPonta} onChange={e => setConsumoPonta(e.target.value)} />
       <input type="number" placeholder="Consumo Fora-Ponta (kWh)" className="w-full p-3 border rounded" value={consumoForaPonta} onChange={e => setConsumoForaPonta(e.target.value)} />
-
       <input type="number" placeholder="Tarifa Cativo Ponta (R$/kWh)" className="w-full p-3 border rounded" value={tarifaCativoPonta} onChange={e => setTarifaCativoPonta(e.target.value)} />
       <input type="number" placeholder="Tarifa Cativo Fora-Ponta (R$/kWh)" className="w-full p-3 border rounded" value={tarifaCativoForaPonta} onChange={e => setTarifaCativoForaPonta(e.target.value)} />
-
       <input type="number" placeholder="ICMS (%)" className="w-full p-3 border rounded" value={icms} onChange={e => setIcms(e.target.value)} />
       <input type="number" placeholder="Tarifa Livre (R$/kWh)" className="w-full p-3 border rounded" value={tarifaLivre} onChange={e => setTarifaLivre(e.target.value)} />
-
       <input type="text" placeholder="Estado (UF)" className="w-full p-3 border rounded" value={estado} onChange={e => setEstado(e.target.value)} />
 
       <div className="flex items-center space-x-2">
@@ -163,21 +140,36 @@ export default function SimuladorComparativoEnergia() {
       {usarSolar && (
         <>
           <input type="number" placeholder="Geração solar mensal (kWh)" className="w-full p-3 border rounded" value={geracaoSolar} onChange={e => setGeracaoSolar(e.target.value)} />
-          <input type="number" placeholder="% de compensação no Cativo (ex: 80)" className="w-full p-3 border rounded" value={compensacaoCativo} onChange={e => setCompensacaoCativo(e.target.value)} />
-          <input type="number" placeholder="% de compensação no Livre (ex: 100)" className="w-full p-3 border rounded" value={compensacaoLivre} onChange={e => setCompensacaoLivre(e.target.value)} />
+          <input type="number" placeholder="% de compensação no Cativo" className="w-full p-3 border rounded" value={compensacaoCativo} onChange={e => setCompensacaoCativo(e.target.value)} />
+          <input type="number" placeholder="% de compensação no Livre" className="w-full p-3 border rounded" value={compensacaoLivre} onChange={e => setCompensacaoLivre(e.target.value)} />
         </>
       )}
 
-      <button onClick={simular} className="bg-blue-600 text-white px-4 py-2 rounded w-full">
-        Comparar Mercados
-      </button>
+      <button onClick={simular} className="bg-blue-600 text-white px-4 py-2 rounded w-full">Comparar Mercados</button>
 
       {resultado && (
-        <div ref={resultadoRef} className="mt-6 space-y-2">
+        <div ref={resultadoRef} className="mt-6 space-y-4">
           <p><strong>Custo no Mercado Cativo:</strong> R$ {resultado.custoCativo.toFixed(2)}</p>
           <p><strong>Custo no Mercado Livre:</strong> R$ {resultado.custoLivre.toFixed(2)}</p>
-          <p><strong>Economia estimada (com solar):</strong> R$ {resultado.economia.toFixed(2)}</p>
-          <p><strong>Economia estimada (sem solar):</strong> R$ {resultado.economiaSemSolar.toFixed(2)}</p>
+          <p><strong>Economia estimada:</strong> R$ {resultado.economia.toFixed(2)}</p>
+
+          <details className="bg-gray-50 p-3 border rounded">
+            <summary className="cursor-pointer font-semibold">Memória de cálculo</summary>
+            <ul className="mt-2 text-sm text-gray-700">
+              <li><strong>Consumo total:</strong> {resultado.memoria.consumoTotal} kWh</li>
+              <li><strong>Tarifa Cativo Ponta:</strong> R$ {resultado.memoria.tarifas.tp.toFixed(2)}</li>
+              <li><strong>Tarifa Cativo Fora-Ponta:</strong> R$ {resultado.memoria.tarifas.tf.toFixed(2)}</li>
+              <li><strong>Tarifa Livre:</strong> R$ {resultado.memoria.tarifas.tl.toFixed(2)}</li>
+              <li><strong>Tarifa média Cativo:</strong> R$ {resultado.memoria.tarifaMediaCativo.toFixed(2)}</li>
+              <li><strong>Valor bruto Cativo:</strong> R$ {resultado.memoria.valorBrutoCativo.toFixed(2)}</li>
+              <li><strong>Desconto Solar Cativo:</strong> R$ {resultado.memoria.descontoSolarCativo.toFixed(2)}</li>
+              <li><strong>Desconto Solar Livre:</strong> R$ {resultado.memoria.descontoSolarLivre.toFixed(2)}</li>
+              <li><strong>ICMS:</strong> {Math.round(resultado.memoria.icmsPercentual * 100)}%</li>
+              <li><strong>Geração solar:</strong> {resultado.memoria.geracaoSolar} kWh</li>
+              <li><strong>Compensação Cativo:</strong> {Math.round(resultado.memoria.compensacoes.cc * 100)}%</li>
+              <li><strong>Compensação Livre:</strong> {Math.round(resultado.memoria.compensacoes.cl * 100)}%</li>
+            </ul>
+          </details>
 
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={[{ name: 'Cativo', valor: resultado.custoCativo }, { name: 'Livre', valor: resultado.custoLivre }]}>
