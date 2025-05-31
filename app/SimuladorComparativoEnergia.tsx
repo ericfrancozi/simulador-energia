@@ -25,6 +25,9 @@ type ResultadoSimulador = {
   };
 };
 
+const [resultado, setResultado] = useState<ResultadoSimulador | null>(null);
+
+
 export default function SimuladorComparativoEnergia() {
   const [consumoPonta, setConsumoPonta] = useState('');
   const [consumoForaPonta, setConsumoForaPonta] = useState('');
@@ -90,18 +93,18 @@ export default function SimuladorComparativoEnergia() {
   };
 
   const exportarPDF = async () => {
-    const input = resultadoRef.current;
-if (!input) return;
-const canvas = await html2canvas(input);
+  const input = resultadoRef.current;
+  if (!input) return;
+  const canvas = await html2canvas(input);
 
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF();
+  const imgData = canvas.toDataURL('image/png');
+  const pdf = new jsPDF();
 
-    const logo = new Image();
-    logo.src = 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Logo_TV_2015.png'; // exemplo de logotipo externo
+  const logo = new Image();
+  logo.src = 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Logo_TV_2015.png'; // exemplo de logotipo externo
 
-    logo.onload = () => {
-      pdf.addImage(logo, 'PNG', 10, 10, 40, 15);
+  logo.onload = () => {
+  pdf.addImage(logo, 'PNG', 10, 10, 40, 15);
 
       pdf.setFontSize(16);
       pdf.text('Relatório Comparativo de Energia', 60, 20);
@@ -241,7 +244,8 @@ if (!resultado) return;
             <BarChart data={[{ name: 'Cativo', valor: resultado.custoCativo }, { name: 'Livre', valor: resultado.custoLivre }]}>
               <XAxis dataKey="name" />
               <YAxis />
-              <Tooltip formatter={(value) => `R$ ${value.toFixed(2)}`} />
+
+              <<Tooltip formatter={(value) => `R$ ${(Number(value)).toFixed(2)}`} />>
               <Bar dataKey="valor" fill="#2563eb" />
             </BarChart>
           </ResponsiveContainer>
